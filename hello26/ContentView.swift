@@ -72,8 +72,8 @@ struct ContentView: View {
                     }
                     .padding()
                 }
-                .onChange(of: messages) { _ in
-                    if let lastMessage = messages.last {
+                .onChange(of: messages) { oldValue, newValue in
+                    if let lastMessage = newValue.last {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             proxy.scrollTo(lastMessage.id, anchor: .bottom)
                         }
@@ -237,6 +237,14 @@ struct ContentView: View {
                     charactersPerSecond: charactersPerSecond
                 )
             }
+
+        // 輸出最後的訊息結果
+        if let lastIndex = messages.indices.last {
+            let finalMessage = messages[lastIndex]
+            print("最終訊息內容：\(finalMessage.content)")
+            print("首次回應時間：\(finalMessage.firstResponseTime?.description ?? "無")")
+            print("字元速度：\(finalMessage.charactersPerSecond?.description ?? "無")")
+        }
         } catch {
             // 處理錯誤
             if let lastIndex = messages.indices.last {
