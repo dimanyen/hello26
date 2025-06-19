@@ -8,6 +8,17 @@
 import SwiftUI
 import FoundationModels
 
+// 問題結構
+struct Question: Codable {
+    let title: String
+    let content: String
+}
+
+// 問題列表結構
+struct QuestionList: Codable {
+    let questions: [Question]
+}
+
 // 聊天訊息結構
 struct ChatMessage: Identifiable, Equatable {
     let id = UUID()
@@ -23,6 +34,7 @@ struct ContentView: View {
     @State private var inputText: String = ""
     @State private var isResponding: Bool = false
     @State private var session: LanguageModelSession?
+    @State private var questions: [Question] = []
     
     var body: some View {
         VStack(spacing: 0) {
@@ -76,20 +88,12 @@ struct ContentView: View {
                 // 快速輸入按鈕區域
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
-                        QuickInputButton(
-                            title: "你好啊",
-                            action: { sendQuickMessage("你好啊") }
-                        )
-                        
-                        QuickInputButton(
-                            title: "跟我講三隻小豬的故事",
-                            action: { sendQuickMessage("跟我講三隻小豬的故事") }
-                        )
-                        
-                        QuickInputButton(
-                            title: "9.11與9.9數值哪一個大",
-                            action: { sendQuickMessage("9.11與9.9數值哪一個大") }
-                        )
+                        ForEach(questions, id: \.title) { question in
+                            QuickInputButton(
+                                title: question.title,
+                                action: { sendQuickMessage(question.content) }
+                            )
+                        }
                     }
                     .padding(.horizontal)
                 }
@@ -117,6 +121,22 @@ struct ContentView: View {
         }
         .onAppear {
             initializeSession()
+            loadQuestions()
+        }
+    }
+    
+    private func loadQuestions() {
+        guard let url = Bundle.main.url(forResource: "questions", withExtension: "json") else {
+            print("找不到 questions.json 檔案")
+            return
+        }
+        
+        do {
+            let data = try Data(contentsOf: url)
+            let questionList = try JSONDecoder().decode(QuestionList.self, from: data)
+            questions = questionList.questions
+        } catch {
+            print("讀取問題檔案失敗：\(error)")
         }
     }
     
@@ -234,6 +254,100 @@ struct ContentView: View {
     }
 }
 
+// Markdown 文字渲染元件
+struct MarkdownText: View {
+    let text: String
+    
+    var body: some View {
+        Text(AttributedString(attributedString))
+    }
+    
+    private var attributedString: NSAttributedString {
+        let attributedString = NSMutableAttributedString(string: text)
+        
+        // 解析粗體語法 **text** 或 __text__
+        parseBold(attributedString)
+        
+        // 解析斜體語法 *text* 或 _text_
+        parseItalic(attributedString)
+        
+        // 解析程式碼語法 `text`
+        parseCode(attributedString)
+        
+        return attributedString
+    }
+    
+    private func parseBold(_ attributedString: NSMutableAttributedString) {
+        let string = attributedString.string
+        
+        // 匹配 **text** 或 __text__
+        let boldPattern = try! NSRegularExpression(pattern: "\\*\\*(.*?)\\*\\*|__(.*?)__")
+        let matches = boldPattern.matches(in: string, options: [], range: NSRange(location: 0, length: string.count))
+        
+        // 從後往前處理，避免索引偏移
+        for match in matches.reversed() {
+            let range = match.range
+            
+            // 找到實際內容的範圍（排除標記符號）
+            let contentRange = NSRange(location: range.location + 2, length: range.length - 4)
+            
+            // 應用粗體樣式
+            attributedString.addAttribute(.font, value: UIFont.boldSystemFont(ofSize: 17), range: contentRange)
+            
+            // 移除標記符號
+            attributedString.deleteCharacters(in: NSRange(location: range.location, length: 2))
+            attributedString.deleteCharacters(in: NSRange(location: range.location + range.length - 4, length: 2))
+        }
+    }
+    
+    private func parseItalic(_ attributedString: NSMutableAttributedString) {
+        let string = attributedString.string
+        
+        // 匹配 *text* 或 _text_（但排除粗體語法）
+        let italicPattern = try! NSRegularExpression(pattern: "(?<!\\*)\\*(?!\\*)(.*?)(?<!\\*)\\*(?!\\*)|(?<!_)_(?!_)(.*?)(?<!_)_(?!_)")
+        let matches = italicPattern.matches(in: string, options: [], range: NSRange(location: 0, length: string.count))
+        
+        // 從後往前處理
+        for match in matches.reversed() {
+            let range = match.range
+            
+            // 找到實際內容的範圍（排除標記符號）
+            let contentRange = NSRange(location: range.location + 1, length: range.length - 2)
+            
+            // 應用斜體樣式
+            attributedString.addAttribute(.font, value: UIFont.italicSystemFont(ofSize: 17), range: contentRange)
+            
+            // 移除標記符號
+            attributedString.deleteCharacters(in: NSRange(location: range.location, length: 1))
+            attributedString.deleteCharacters(in: NSRange(location: range.location + range.length - 2, length: 1))
+        }
+    }
+    
+    private func parseCode(_ attributedString: NSMutableAttributedString) {
+        let string = attributedString.string
+        
+        // 匹配 `text`
+        let codePattern = try! NSRegularExpression(pattern: "`([^`]+)`")
+        let matches = codePattern.matches(in: string, options: [], range: NSRange(location: 0, length: string.count))
+        
+        // 從後往前處理
+        for match in matches.reversed() {
+            let range = match.range
+            
+            // 找到實際內容的範圍（排除標記符號）
+            let contentRange = NSRange(location: range.location + 1, length: range.length - 2)
+            
+            // 應用程式碼樣式
+            attributedString.addAttribute(.font, value: UIFont.monospacedSystemFont(ofSize: 17, weight: .regular), range: contentRange)
+            attributedString.addAttribute(.backgroundColor, value: UIColor.systemGray6, range: contentRange)
+            
+            // 移除標記符號
+            attributedString.deleteCharacters(in: NSRange(location: range.location, length: 1))
+            attributedString.deleteCharacters(in: NSRange(location: range.location + range.length - 2, length: 1))
+        }
+    }
+}
+
 // 訊息氣泡元件
 struct MessageBubble: View {
     let message: ChatMessage
@@ -248,7 +362,7 @@ struct MessageBubble: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
-                    Text(LocalizedStringKey(message.content))
+                    MarkdownText(text: message.content)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(Color.blue)
@@ -263,7 +377,7 @@ struct MessageBubble: View {
                         .foregroundColor(.secondary)
                     
                     ZStack(alignment: .bottomTrailing) {
-                        Text(LocalizedStringKey(message.content))
+                        MarkdownText(text: message.content)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
                             .background(Color(.systemGray5))
