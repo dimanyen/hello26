@@ -14,6 +14,8 @@ struct ChatMessage: Identifiable, Equatable {
     let content: String
     let isUser: Bool
     let timestamp: Date
+    let firstResponseTime: Double? // 第一次回應時間（秒）
+    let charactersPerSecond: Double? // 字元/秒
 }
 
 struct ContentView: View {
@@ -85,8 +87,8 @@ struct ContentView: View {
                         )
                         
                         QuickInputButton(
-                            title: "9.11與9.9哪一個大",
-                            action: { sendQuickMessage("9.11與9.9哪一個大") }
+                            title: "9.11與9.9數值哪一個大",
+                            action: { sendQuickMessage("9.11與9.9數值哪一個大") }
                         )
                     }
                     .padding(.horizontal)
@@ -134,7 +136,7 @@ struct ContentView: View {
         guard !trimmedText.isEmpty, !isResponding else { return }
         
         // 添加用戶訊息
-        let userMessage = ChatMessage(content: trimmedText, isUser: true, timestamp: Date())
+        let userMessage = ChatMessage(content: trimmedText, isUser: true, timestamp: Date(), firstResponseTime: nil, charactersPerSecond: nil)
         messages.append(userMessage)
         
         // 清空輸入框
@@ -152,7 +154,7 @@ struct ContentView: View {
         guard !isResponding else { return }
         
         // 添加用戶訊息
-        let userMessage = ChatMessage(content: message, isUser: true, timestamp: Date())
+        let userMessage = ChatMessage(content: message, isUser: true, timestamp: Date(), firstResponseTime: nil, charactersPerSecond: nil)
         messages.append(userMessage)
         
         // 開始串流回覆
@@ -170,22 +172,50 @@ struct ContentView: View {
             return
         }
         
+        // 記錄開始時間
+        let startTime = Date()
+        var firstResponseTime: Double?
+        var isFirstResponse = true
+        
         // 建立空的 AI 訊息
-        let assistantMessage = ChatMessage(content: "", isUser: false, timestamp: Date())
+        let assistantMessage = ChatMessage(content: "", isUser: false, timestamp: Date(), firstResponseTime: nil, charactersPerSecond: nil)
         messages.append(assistantMessage)
         
         do {
             let stream = session.streamResponse(to: prompt)
             
             for try await response in stream {
+                // 記錄第一次回應時間
+                if isFirstResponse {
+                    firstResponseTime = Date().timeIntervalSince(startTime)
+                    isFirstResponse = false
+                }
+                
                 // 直接更新最後一條訊息的內容
                 if let lastIndex = messages.indices.last {
                     messages[lastIndex] = ChatMessage(
                         content: response,
                         isUser: false,
-                        timestamp: assistantMessage.timestamp
+                        timestamp: assistantMessage.timestamp,
+                        firstResponseTime: firstResponseTime,
+                        charactersPerSecond: nil
                     )
                 }
+            }
+            
+            // 計算字元速度
+            if let lastIndex = messages.indices.last {
+                let finalContent = messages[lastIndex].content
+                let totalTime = Date().timeIntervalSince(startTime)
+                let charactersPerSecond = totalTime > 0 ? Double(finalContent.count) / totalTime : 0
+                
+                messages[lastIndex] = ChatMessage(
+                    content: finalContent,
+                    isUser: false,
+                    timestamp: assistantMessage.timestamp,
+                    firstResponseTime: firstResponseTime,
+                    charactersPerSecond: charactersPerSecond
+                )
             }
         } catch {
             // 處理錯誤
@@ -193,7 +223,9 @@ struct ContentView: View {
                 messages[lastIndex] = ChatMessage(
                     content: "抱歉，發生錯誤：\(error.localizedDescription)",
                     isUser: false,
-                    timestamp: assistantMessage.timestamp
+                    timestamp: assistantMessage.timestamp,
+                    firstResponseTime: firstResponseTime,
+                    charactersPerSecond: nil
                 )
             }
         }
@@ -230,13 +262,43 @@ struct MessageBubble: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
-                    Text(message.content)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color(.systemGray5))
-                        .foregroundColor(.primary)
-                        .cornerRadius(16)
-                        .cornerRadius(4, corners: [.topLeft, .topRight, .bottomRight])
+                    ZStack(alignment: .bottomTrailing) {
+                        Text(message.content)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(.systemGray5))
+                            .foregroundColor(.primary)
+                            .cornerRadius(16)
+                            .cornerRadius(4, corners: [.topLeft, .topRight, .bottomRight])
+                    }
+                    
+                    // 顯示回應時間和字元速度資訊在訊息框外部右下角
+                    if let firstResponseTime = message.firstResponseTime {
+                        HStack {
+                            Spacer()
+                            
+                            VStack(alignment: .trailing, spacing: 2) {
+                                if let charactersPerSecond = message.charactersPerSecond {
+                                    Text(String(format: "%.1f 字元/s", charactersPerSecond))
+                                        .font(.system(size: 10))
+                                        .foregroundColor(.secondary)
+                                        .padding(.horizontal, 4)
+                                        .padding(.vertical, 2)
+                                        .background(Color(.systemBackground).opacity(0.8))
+                                        .cornerRadius(4)
+                                }
+                                
+                                Text(String(format: "%.2fs", firstResponseTime))
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.secondary)
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 2)
+                                    .background(Color(.systemBackground).opacity(0.8))
+                                    .cornerRadius(4)
+                            }
+                        }
+                        .padding(.top, 4)
+                    }
                 }
                 
                 Spacer()
