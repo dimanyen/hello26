@@ -248,7 +248,7 @@ struct MessageBubble: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
-                    Text(message.content)
+                    Text(LocalizedStringKey(message.content))
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(Color.blue)
@@ -263,7 +263,7 @@ struct MessageBubble: View {
                         .foregroundColor(.secondary)
                     
                     ZStack(alignment: .bottomTrailing) {
-                        Text(message.content)
+                        Text(LocalizedStringKey(message.content))
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
                             .background(Color(.systemGray5))
