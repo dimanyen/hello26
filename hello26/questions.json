@@ -1,16 +1,20 @@
 {
   "questions": [
     {
-      "title": "推理題",
-      "content": "在一個 6 × 6 的國際象棋棋盤上，騎士（Knight）要從左上角跳到右下角，且必須經過每個格子恰好一次。問題：此路徑是否存在？"
+      "title": "邏輯推理測試",
+      "content": "在一個 6 × 6 的國際象棋棋盤上，騎士（Knight）要從左上角跳到右下角，且必須經過每個格子恰好一次。此路徑是否存在？若存在，請列出完整移動序列（用座標表示，例如 A1 → C2…）；若不存在，請用圖論的偶奇性或歐拉路徑觀點證明不可能。"
     },
     {
-      "title": "三隻小豬故事",
-      "content": "跟我講三隻小豬的故事"
+      "title": "程式除錯測試",
+      "content": "以下 Python 程式碼試圖計算資料夾中所有 `.txt` 檔案的總行數，卻始終印出 0：```python\nimport os\n\ndef count_lines(path):\n    total = 0\n    for dir, _, files in os.walk(path):\n        for f in files:\n            if f.endswith('.txt'):\n                with open(f) as fh:\n                    total += len(fh.readlines)\n    print(total)\n\ncount_lines('/Users/diman/Documents/notes')```請指出至少兩個可能的錯誤，並提供修正版與說明。"
     },
     {
-      "title": "數值比較",
-      "content": "9.11與9.9數值哪一個大"
+      "title": "創意思考測試",
+      "content": "想像你身處 2030 年，擔任一家新創公司產品經理，該公司主打『生成式 AI + 非侵入式腦機介面（BCI）』。請提出一項面向一般消費者（B2C）的產品構想，並說明以下四點：1. 市場痛點、2. 產品功能、3. 技術實現方式、4. 盈利模式。"
+    },
+    {
+      "title": "數學能力測試",
+      "content": "某投資組合第一年報酬率為 +20%，第二年報酬率為 -25%。請問兩年下來的總報酬率為多少？（請用百分比表示，並說明計算過程）"
     }
   ]
-} 
+}
