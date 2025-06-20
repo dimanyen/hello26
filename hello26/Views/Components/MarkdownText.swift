@@ -106,6 +106,20 @@ struct MarkdownText: View {
             withTemplate: "$1"  // 只保留花括號內的內容
         )
         
+        // 處理 \boxed{內容} 語法
+        let boxedPattern = try! NSRegularExpression(pattern: "\\\\boxed\\{([^}]+)\\}")
+        let boxedRange = NSRange(location: 0, length: processedFormula.count)
+        
+        processedFormula = boxedPattern.stringByReplacingMatches(
+            in: processedFormula,
+            options: [],
+            range: boxedRange,
+            withTemplate: "[$1]"  // 用方括號包圍內容來表示框住的效果
+        )
+        
+        // 處理空格語法
+        processedFormula = processedFormula.replacingOccurrences(of: "\\,", with: " ")      // 小空格
+        
         // 處理各種數學符號
         processedFormula = processedFormula.replacingOccurrences(of: "\\times", with: "×")  // 乘法
         processedFormula = processedFormula.replacingOccurrences(of: "\\div", with: "÷")    // 除法
