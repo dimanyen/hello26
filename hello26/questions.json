@@ -1,20 +1,37 @@
 {
   "questions": [
     {
-      "title": "邏輯推理測試",
-      "content": "在一個 6 × 6 的國際象棋棋盤上，騎士（Knight）要從左上角跳到右下角，且必須經過每個格子恰好一次。此路徑是否存在？若存在，請列出完整移動序列（用座標表示，例如 A1 → C2…）；若不存在，請用圖論的偶奇性或歐拉路徑觀點證明不可能。"
+      "type": "math_reasoning",
+      "title": "數理能力測試",
+      "content": "餐廳每天營業11小時，每小時15位客人，每人消費350元。固定成本為8000元，食材成本佔營收35%。請計算每日淨利潤，回傳整數結果。",
+      "expected_output": "純整數，例如：12345"
     },
     {
+      "type": "code_debugging",
       "title": "程式除錯測試",
-      "content": "以下 Python 程式碼試圖計算資料夾中所有 `.txt` 檔案的總行數，卻始終印出 0：```python\nimport os\n\ndef count_lines(path):\n    total = 0\n    for dir, _, files in os.walk(path):\n        for f in files:\n            if f.endswith('.txt'):\n                with open(f) as fh:\n                    total += len(fh.readlines)\n    print(total)\n\ncount_lines('/Users/diman/Documents/notes')```請指出至少兩個可能的錯誤，並提供修正版與說明。"
+      "content": "以下 JavaScript 函式欲計算陣列中所有偶數的總和，但結果錯誤。請：1️⃣ 找出邏輯錯誤、2️⃣ 提供修正版函式、3️⃣ 用一句話說明修正關鍵。\n```javascript\nfunction sumEvenNumbers(arr) {\n  let sum = 0;\n  for (let i = 0; i <= arr.length; i++) {\n    if (arr[i] % 2 === 0) {\n      sum += arr[i];\n    }\n  }\n  return sum;\n}\n```\n測試用例：`sumEvenNumbers([1, 2, 3, 4, 5, 6])` 應輸出 12。",
+      "expected_output": {
+        "fixed_code": "修正後完整函式字串",
+        "explanation": "一句話說明"
+      }
     },
     {
-      "title": "創意思考測試",
-      "content": "想像你身處 2030 年，擔任一家新創公司產品經理，該公司主打『生成式 AI + 非侵入式腦機介面（BCI）』。請提出一項面向一般消費者（B2C）的產品構想，並說明以下四點：1. 市場痛點、2. 產品功能、3. 技術實現方式、4. 盈利模式。"
+      "type": "logical_reasoning",
+      "title": "邏輯推理測試",
+      "content": "有三個箱子分別寫著蘋果 橘子 混合 三個標籤都貼錯了 你只能從其中一個箱子拿出一顆水果 就能正確判斷每個箱子的內容 請問該怎麼做",
+      "expected_output": "簡要說明推理過程和每個箱子正確內容"
     },
     {
-      "title": "數學能力測試",
-      "content": "某投資組合第一年報酬率為 +20%，第二年報酬率為 -25%。請問兩年下來的總報酬率為多少？（請用百分比表示，並說明計算過程）"
+      "type": "creative_writing",
+      "title": "創意思考測試：信用卡行銷文案",
+      "content": "目標對象：25–40 歲上班族。主打賣點：現金回饋無上限。請產出 150 字內、既活潑又專業的信用卡行銷文案",
+      "expected_output": "完整文案一段文字（150 字以內）"
+    },
+    {
+      "type": "knowledge_explanation",
+      "title": "知識問答測試",
+      "content": "請簡要說明機器學習、深度學習與人工智慧三者的差異，並各舉一個日常應用例",
+      "expected_output": "段落或表格，含三者差異 + 各 1 範例"
     }
   ]
 }

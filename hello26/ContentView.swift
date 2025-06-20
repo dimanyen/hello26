@@ -70,7 +70,6 @@ struct ContentView: View {
     @State private var isResponding: Bool = false
     @State private var session: LanguageModelSession?
     @State private var questions: [Question] = []
-    @State private var errorStats: [String: Int] = [:] // 錯誤統計
     
     var body: some View {
         VStack(spacing: 0) {
@@ -164,38 +163,10 @@ struct ContentView: View {
             initializeSession()
             loadQuestions()
         }
-        #if DEBUG
-        .overlay(
-            // 開發者模式：顯示錯誤統計（僅在 Debug 模式下顯示）
-            VStack {
-                HStack {
-                    Spacer()
-                    if !errorStats.isEmpty {
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text("錯誤統計")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                            ForEach(Array(errorStats.keys.sorted()), id: \.self) { key in
-                                Text("\(key): \(errorStats[key] ?? 0)")
-                                    .font(.caption2)
-                                    .foregroundColor(.red)
-                            }
-                        }
-                        .padding(8)
-                        .background(Color(.systemBackground).opacity(0.9))
-                        .cornerRadius(8)
-                        .padding()
-                    }
-                }
-                Spacer()
-            }
-        )
-        #endif
     }
     
     private func loadQuestions() {
         guard let url = Bundle.main.url(forResource: "questions", withExtension: "json") else {
-            print("找不到 questions.json 檔案")
             return
         }
         
@@ -204,7 +175,7 @@ struct ContentView: View {
             let questionList = try JSONDecoder().decode(QuestionList.self, from: data)
             questions = questionList.questions
         } catch {
-            print("讀取問題檔案失敗：\(error)")
+            // 靜默處理錯誤
         }
     }
     
@@ -317,159 +288,6 @@ struct ContentView: View {
         }
     }
     
-    /// 獲取錯誤的詳細資訊，用於除錯和日誌記錄
-    private func getErrorDetails(for error: Error) -> (type: String, description: String, suggestions: [String]) {
-        if let generationError = error as? LanguageModelSession.GenerationError {
-            switch generationError {
-            case .assetsUnavailable:
-                return (
-                    type: "Assets Unavailable",
-                    description: "語言模型所需的資源目前無法使用",
-                    suggestions: [
-                        "請稍後再試",
-                        "檢查您的網路連線",
-                        "如果問題持續，請聯繫客服"
-                    ]
-                )
-            case .decodingFailure:
-                return (
-                    type: "Decoding Failure",
-                    description: "回應解析失敗",
-                    suggestions: [
-                        "請稍後再試",
-                        "嘗試重新表述您的問題",
-                        "如果問題持續，請聯繫客服"
-                    ]
-                )
-            case .exceededContextWindowSize:
-                return (
-                    type: "Exceeded Context Window Size",
-                    description: "問題內容超過了模型的處理限制",
-                    suggestions: [
-                        "嘗試簡化您的問題",
-                        "將複雜問題分解為多個簡單問題",
-                        "減少問題的長度"
-                    ]
-                )
-            case .guardrailViolation:
-                return (
-                    type: "Guardrail Violation",
-                    description: "問題內容觸發了安全保護機制",
-                    suggestions: [
-                        "嘗試重新表述您的問題",
-                        "避免使用可能被誤判為不當內容的詞彙",
-                        "使用更中性的表達方式"
-                    ]
-                )
-            case .unsupportedGuide:
-                return (
-                    type: "Unsupported Guide",
-                    description: "使用了不支援的生成指引",
-                    suggestions: [
-                        "請稍後再試",
-                        "嘗試使用不同的表達方式",
-                        "如果問題持續，請聯繫客服"
-                    ]
-                )
-            case .unsupportedLanguageOrLocale:
-                return (
-                    type: "Unsupported Language or Locale",
-                    description: "模型不支援要求的語言或地區設定",
-                    suggestions: [
-                        "嘗試使用繁體中文或英文",
-                        "檢查您的語言設定",
-                        "如果問題持續，請聯繫客服"
-                    ]
-                )
-            @unknown default:
-                return (
-                    type: "Unknown Generation Error",
-                    description: "發生未知的語言模型錯誤",
-                    suggestions: [
-                        "請稍後再試",
-                        "重新啟動應用程式",
-                        "如果問題持續，請聯繫客服"
-                    ]
-                )
-            }
-        } else {
-            // 處理其他類型的錯誤，使用錯誤描述進行智能分類
-            let errorDescription = error.localizedDescription.lowercased()
-            
-            if errorDescription.contains("content") && errorDescription.contains("filter") {
-                return (
-                    type: "Content Filtered",
-                    description: "內容被過濾系統阻擋",
-                    suggestions: [
-                        "嘗試重新表述您的問題",
-                        "避免使用可能被誤判為不當內容的詞彙",
-                        "使用更中性的表達方式"
-                    ]
-                )
-            } else if errorDescription.contains("model") && errorDescription.contains("unavailable") {
-                return (
-                    type: "Model Unavailable",
-                    description: "語言模型目前無法使用",
-                    suggestions: [
-                        "請稍後再試",
-                        "檢查您的網路連線",
-                        "如果問題持續，請聯繫客服"
-                    ]
-                )
-            } else if errorDescription.contains("network") || errorDescription.contains("connection") {
-                return (
-                    type: "Network Error",
-                    description: "網路連線發生問題",
-                    suggestions: [
-                        "檢查您的網路連線",
-                        "嘗試切換 WiFi 或行動網路",
-                        "確認網路設定是否正確"
-                    ]
-                )
-            } else if errorDescription.contains("quota") || errorDescription.contains("limit") {
-                return (
-                    type: "Quota Exceeded",
-                    description: "已達到使用配額上限",
-                    suggestions: [
-                        "請稍後再試",
-                        "考慮升級您的使用方案",
-                        "檢查您的使用量統計"
-                    ]
-                )
-            } else if errorDescription.contains("server") || errorDescription.contains("service") {
-                return (
-                    type: "Server Error",
-                    description: "伺服器發生錯誤",
-                    suggestions: [
-                        "請稍後再試",
-                        "如果問題持續，請聯繫客服",
-                        "檢查服務狀態頁面"
-                    ]
-                )
-            } else if errorDescription.contains("timeout") || errorDescription.contains("timed out") {
-                return (
-                    type: "Timeout",
-                    description: "回應超時",
-                    suggestions: [
-                        "請稍後再試",
-                        "嘗試簡化您的問題",
-                        "檢查網路連線速度"
-                    ]
-                )
-            } else {
-                return (
-                    type: "Other Error",
-                    description: error.localizedDescription,
-                    suggestions: [
-                        "請稍後再試",
-                        "重新啟動應用程式",
-                        "如果問題持續，請聯繫客服"
-                    ]
-                )
-            }
-        }
-    }
-    
     @MainActor
     private func streamResponse(to prompt: String) async {
         guard let session = session else {
@@ -526,18 +344,9 @@ struct ContentView: View {
                     originalPrompt: nil
                 )
             }
-
-        // 輸出最後的訊息結果
-        if let lastIndex = messages.indices.last {
-            let finalMessage = messages[lastIndex]
-            print("最終訊息內容：\(finalMessage.content)")
-            print("首次回應時間：\(finalMessage.firstResponseTime?.description ?? "無")")
-            print("字元速度：\(finalMessage.charactersPerSecond?.description ?? "無")")
-        }
         } catch {
-            // 處理錯誤 - 根據 Apple 官方文件的 GenerationError 類型
+            // 處理錯誤
             let errorMessage = getErrorMessage(for: error)
-            let errorDetails = getErrorDetails(for: error)
             
             // 更新錯誤訊息到聊天記錄
             if let lastIndex = messages.indices.last {
@@ -551,25 +360,6 @@ struct ContentView: View {
                     originalPrompt: prompt // 保存原始提示詞用於重試
                 )
             }
-            
-            // 記錄詳細錯誤資訊供除錯用
-            print("=== 錯誤詳細資訊 ===")
-            print("錯誤類型：\(errorDetails.type)")
-            print("錯誤描述：\(errorDetails.description)")
-            print("錯誤原始描述：\(error.localizedDescription)")
-            print("建議解決方案：\(errorDetails.suggestions.joined(separator: ", "))")
-            print("==================")
-            
-            // 更新錯誤統計
-            if let generationError = error as? LanguageModelSession.GenerationError {
-                let errorType = String(describing: generationError)
-                errorStats[errorType, default: 0] += 1
-                print("GenerationError 類型：\(generationError)")
-            } else {
-                let errorType = error.localizedDescription
-                errorStats[errorType, default: 0] += 1
-            }
-            print("錯誤統計：\(errorStats)")
         }
         
         isResponding = false
