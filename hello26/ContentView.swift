@@ -8,10 +8,42 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var viewModel = ChatViewModel()
+    let selectedCharacter: Character?
+    @StateObject private var viewModel: ChatViewModel
+    
+    init(selectedCharacter: Character?) {
+        self.selectedCharacter = selectedCharacter
+        self._viewModel = StateObject(wrappedValue: ChatViewModel(character: selectedCharacter))
+    }
     
     var body: some View {
         VStack(spacing: 0) {
+            // 角色資訊標題列
+            if let character = selectedCharacter {
+                HStack(spacing: 12) {
+                    Text(character.avatar)
+                        .font(.title2)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("正在與 \(character.name) 對話")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        Text(character.description)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .background(Color(.systemGray6))
+                
+                Divider()
+            }
+            
             // 聊天記錄區域
             ScrollViewReader { proxy in
                 ScrollView {
@@ -102,5 +134,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    ContentView(selectedCharacter: Character.defaultCharacters.first)
 }

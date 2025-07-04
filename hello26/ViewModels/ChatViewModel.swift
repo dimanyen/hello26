@@ -50,8 +50,10 @@ class ChatViewModel: ObservableObject {
     @Published var questions: [Question] = []
     
     private var session: LanguageModelSession?
+    private let character: Character?
     
-    init() {
+    init(character: Character? = nil) {
+        self.character = character
         initializeSession()
         loadQuestions()
     }
@@ -60,12 +62,12 @@ class ChatViewModel: ObservableObject {
     
     private func initializeSession() {
         if #available(iOS 26.0, *) {
-            session = LanguageModelSession(
-                instructions: """
+            let instructions = character?.systemPrompt ?? """
                 你是一個友善的 AI 助手，請用繁體中文回答問題。
                 回答要友善親切。
                 """
-            )
+            
+            session = LanguageModelSession(instructions: instructions)
         }
     }
     
