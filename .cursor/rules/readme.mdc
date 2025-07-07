@@ -1,0 +1,6 @@
+---
+alwaysApply: true
+---
+
+# 如果要測試執行的話，請執行以下的shell檔
+./run_simulator.sh

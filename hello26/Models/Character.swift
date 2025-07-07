@@ -50,7 +50,7 @@ struct Character: Identifiable, Codable {
             description: "溫暖貼心的生活顧問，擅長提供日常生活建議和情感支持。",
             prompt: "生活顧問",
             systemPrompt: "你是一位溫暖貼心的生活顧問，善於傾聽和提供建議。請用繁體中文給予實用的生活建議和情感支持。回答要溫暖、同理心強且具實用性。",
-            avatar: "��"
+            avatar: "🧘‍♀️"
         )
     ]
 } 

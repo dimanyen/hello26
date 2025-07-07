@@ -49,7 +49,7 @@ class ChatViewModel: ObservableObject {
     @Published var isResponding: Bool = false
     @Published var questions: [Question] = []
     
-    private var session: LanguageModelSession?
+    private var session: AnyObject?
     private let character: Character?
     
     init(character: Character? = nil) {
@@ -178,60 +178,76 @@ class ChatViewModel: ObservableObject {
         )
         messages.append(assistantMessage)
         
-        do {
-            let stream = session.streamResponse(to: prompt)
-            
-            for try await response in stream {
-                // 記錄第一次回應時間
-                if isFirstResponse {
-                    firstResponseTime = Date().timeIntervalSince(startTime)
-                    isFirstResponse = false
+        if #available(iOS 26.0, *) {
+            do {
+                let languageSession = session as! LanguageModelSession
+                let stream = languageSession.streamResponse(to: prompt)
+                
+                for try await response in stream {
+                    // 記錄第一次回應時間
+                    if isFirstResponse {
+                        firstResponseTime = Date().timeIntervalSince(startTime)
+                        isFirstResponse = false
+                    }
+                    
+                    // 直接更新最後一條訊息的內容
+                    if let lastIndex = messages.indices.last {
+                        messages[lastIndex] = ChatMessage(
+                            content: response,
+                            isUser: false,
+                            timestamp: assistantMessage.timestamp,
+                            firstResponseTime: firstResponseTime,
+                            charactersPerSecond: nil,
+                            isError: false,
+                            originalPrompt: nil
+                        )
+                    }
                 }
                 
-                // 直接更新最後一條訊息的內容
+                // 計算字元速度
                 if let lastIndex = messages.indices.last {
+                    let finalContent = messages[lastIndex].content
+                    let totalTime = Date().timeIntervalSince(startTime)
+                    let charactersPerSecond = totalTime > 0 ? Double(finalContent.count) / totalTime : 0
+                    
                     messages[lastIndex] = ChatMessage(
-                        content: response,
+                        content: finalContent,
                         isUser: false,
                         timestamp: assistantMessage.timestamp,
                         firstResponseTime: firstResponseTime,
-                        charactersPerSecond: nil,
+                        charactersPerSecond: charactersPerSecond,
                         isError: false,
                         originalPrompt: nil
                     )
                 }
-            }
-            
-            // 計算字元速度
-            if let lastIndex = messages.indices.last {
-                let finalContent = messages[lastIndex].content
-                let totalTime = Date().timeIntervalSince(startTime)
-                let charactersPerSecond = totalTime > 0 ? Double(finalContent.count) / totalTime : 0
+            } catch {
+                // 處理錯誤
+                let errorMessage = getErrorMessage(for: error)
                 
-                messages[lastIndex] = ChatMessage(
-                    content: finalContent,
-                    isUser: false,
-                    timestamp: assistantMessage.timestamp,
-                    firstResponseTime: firstResponseTime,
-                    charactersPerSecond: charactersPerSecond,
-                    isError: false,
-                    originalPrompt: nil
-                )
+                // 更新錯誤訊息到聊天記錄
+                if let lastIndex = messages.indices.last {
+                    messages[lastIndex] = ChatMessage(
+                        content: errorMessage,
+                        isUser: false,
+                        timestamp: assistantMessage.timestamp,
+                        firstResponseTime: firstResponseTime,
+                        charactersPerSecond: nil,
+                        isError: true,
+                        originalPrompt: prompt // 保存原始提示詞用於重試
+                    )
+                }
             }
-        } catch {
-            // 處理錯誤
-            let errorMessage = getErrorMessage(for: error)
-            
-            // 更新錯誤訊息到聊天記錄
+        } else {
+            // 在較舊版本的iOS上，顯示不支援的錯誤
             if let lastIndex = messages.indices.last {
                 messages[lastIndex] = ChatMessage(
-                    content: errorMessage,
+                    content: "抱歉，此功能需要 iOS 26.0 或更新版本。",
                     isUser: false,
                     timestamp: assistantMessage.timestamp,
-                    firstResponseTime: firstResponseTime,
+                    firstResponseTime: nil,
                     charactersPerSecond: nil,
                     isError: true,
-                    originalPrompt: prompt // 保存原始提示詞用於重試
+                    originalPrompt: prompt
                 )
             }
         }
@@ -241,7 +257,8 @@ class ChatViewModel: ObservableObject {
     
     private func getErrorMessage(for error: Error) -> String {
         // 檢查是否為 FoundationModels 的 GenerationError
-        if let generationError = error as? LanguageModelSession.GenerationError {
+        if #available(iOS 26.0, *),
+           let generationError = error as? LanguageModelSession.GenerationError {
             switch generationError {
             case .assetsUnavailable:
                 return "抱歉，語言模型所需的資源目前無法使用。\n\n💡 建議：\n• 請稍後再試\n• 檢查您的網路連線\n• 如果問題持續，請聯繫客服\n\n詳細資訊：\(error.localizedDescription)"

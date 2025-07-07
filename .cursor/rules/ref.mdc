@@ -1,0 +1,7 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+
+如果程式是寫到關於 foundation models的應用，請參考文件 swift_foundation_models_guide.md
