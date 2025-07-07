@@ -10,7 +10,7 @@
 
 Hello26 是一個專門針對 iOS 26 的 FoundationModels 框架進行測試和演示的 SwiftUI 應用程式。本專案展示了如何使用 Apple 最新的語言模型整合技術來建立智能聊天助手，採用現代化的 MVVM 架構設計。
 
-🎥 **[觀看 Demo 影片](https://www.youtube.com/shorts/x9zVY3jQ34w)**
+🎥 **[觀看 Demo 影片](https://youtube.com/shorts/qTh2TfwU1z4?feature=share)**
 
 ### 🚀 主要功能
 
@@ -228,7 +228,7 @@ hello26/
 
 Hello26 is a SwiftUI application specifically designed to test and demonstrate the FoundationModels framework for iOS 26. This project showcases how to use Apple's latest language model integration technology to build an intelligent chat assistant with modern MVVM architecture.
 
-🎥 **[Watch Demo Video](https://www.youtube.com/shorts/x9zVY3jQ34w)**
+🎥 **[Watch Demo Video](https://youtube.com/shorts/qTh2TfwU1z4?feature=share)**
 
 ### 🚀 Key Features
 
